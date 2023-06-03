@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Simple Chat App</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+    }
+
+    /* Chat container */
+    .chat-container {
+      width: 100%;
+      max-width: 400px;
+      margin: 0 auto;
+      border: 1px solid #ccc;
+      padding: 10px;
+      height: 400px;
+      overflow-y: scroll;
+    }
+
+    .chat-container p {
+      margin: 0;
+      padding: 0;
+      font-size: 14px;
+    }
+
+    /* Input fields */
+    .chat-input {
+      width: 100%;
+      margin-top: 10px;
+      font-size: 14px;
+      padding: 5px;
+    }
+
+    /* Send button */
+    .send-button {
+      display: block;
+      width: 100%;
+      margin-top: 10px;
+      padding: 5px;
+      background-color: #4CAF50;
+      color: #fff;
+      border: none;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    /* Responsive design for mobile devices */
+    @media only screen and (max-width: 600px) {
+      .chat-container {
+        height: 250px;
+      }
+
+      .chat-container p {
+        font-size: 12px;
+      }
+
+      .chat-input,
+      .send-button {
+        font-size: 12px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>Simple Chat App</h1>
+
+  <div class="chat-container" id="chatContainer">
+    <!-- Chat messages will be displayed here -->
+  </div>
+
+  <input type="text" id="nameInput" placeholder="Your Name" class="chat-input" />
+  <input type="text" id="messageInput" class="chat-input" placeholder="Type a message..." />
+  <button id="sendButton" class="send-button">Send</button>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.2.0/socket.io.js"></script>
+  <script>
+    const chatContainer = document.getElementById('chatContainer');
+    const nameInput = document.getElementById('nameInput');
+    const messageInput = document.getElementById('messageInput');
+    const sendButton = document.getElementById('sendButton');
+    const socket = io();
+
+    // Load previous messages from localStorage
+    const savedMessages = JSON.parse(localStorage.getItem('chatMessages')) || [];
+    savedMessages.forEach(savedMessage => addMessage(savedMessage));
+
+    // Function to add a new message to the chat container
+    function addMessage(message) {
+      const p = document.createElement('p');
+      p.textContent = message;
+      chatContainer.appendChild(p);
+    }
+
+    // Function to handle sending a message
+    function sendMessage() {
+      const name = nameInput.value;
+      const message = messageInput.value;
+
+      if (name.trim() !== '' && message.trim() !== '') {
+        const formattedMessage = name + ': ' + message;
+        addMessage(formattedMessage);
+        messageInput.value = '';
+
+        // Emit the message to the server
+        socket.emit('message', formattedMessage);
+
+        // Save the message to localStorage
+        const savedMessages = JSON.parse(localStorage.getItem('chatMessages')) || [];
+        savedMessages.push(formattedMessage);
+        localStorage.setItem('chatMessages', JSON.stringify(savedMessages));
+      }
+    }
+
+    // Event listener for the send button
+    sendButton.addEventListener('click', function() {
+      sendMessage();
+    });
+
+    // Event listener for the message input field
+    messageInput.addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') {
+        sendMessage();
+      }
+    });
+
+    // Socket.IO event listener for receiving messages from the server
+    socket.on('message', function(message) {
+      addMessage(message);
+
+      // Save the message to localStorage
+      const savedMessages = JSON.parse(localStorage.getItem('chatMessages')) || [];
+      savedMessages.push(message);
+      localStorage.setItem('chatMessages', JSON.stringify(savedMessages));
+    });
+  </script>
+</body>
+</html>
